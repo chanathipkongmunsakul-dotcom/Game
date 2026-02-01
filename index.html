@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Mini Slot Game</title>
+
+<style>
+body{
+  margin:0;
+  background:#0b0b0b;
+  font-family:'Segoe UI',Arial,sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  overflow:hidden;
+}
+
+/* ===== START SCREEN ===== */
+.start-screen{
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at top,#2a2a2a,#000 70%);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:10;
+  transition:opacity .8s;
+}
+
+.start-screen::before{
+  content:"";
+  position:absolute;
+  inset:-50%;
+  background:conic-gradient(from 0deg,transparent,rgba(255,215,0,.15),transparent);
+  animation:rotateLight 12s linear infinite;
+}
+
+@keyframes rotateLight{
+  to{transform:rotate(360deg)}
+}
+
+.start-screen.hidden{
+  opacity:0;
+  pointer-events:none;
+}
+
+.logo{
+  font-size:56px;
+  font-weight:900;
+  color:gold;
+  text-shadow:0 0 15px gold,0 0 40px orange;
+  animation:logoFloat 2.5s ease-in-out infinite;
+  z-index:1;
+}
+
+@keyframes logoFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-12px)}
+}
+
+.sub-title{
+  color:#ccc;
+  margin:14px 0 40px;
+  letter-spacing:3px;
+  z-index:1;
+}
+
+.start-btn{
+  z-index:1;
+  padding:18px 56px;
+  font-size:22px;
+  border:none;
+  border-radius:40px;
+  cursor:pointer;
+  background:linear-gradient(135deg,#ffd700,#ff9800);
+  box-shadow:0 0 20px gold,0 0 40px orange;
+  transition:.3s;
+}
+
+.start-btn:hover{
+  transform:scale(1.08);
+}
+
+/* ===== LOADING ===== */
+.loading-screen{
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle,#111,#000);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:9;
+  transition:.6s;
+}
+
+.loading-screen.hidden{
+  opacity:0;
+  pointer-events:none;
+}
+
+.loading-bar{
+  width:320px;
+  height:18px;
+  background:#333;
+  border-radius:20px;
+  overflow:hidden;
+}
+
+.loading-fill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,gold,orange);
+  animation:load 2.5s forwards;
+}
+
+@keyframes load{
+  to{width:100%}
+}
+
+.loading-text{
+  color:white;
+  margin-top:14px;
+  letter-spacing:2px;
+}
+
+/* ===== GAME ===== */
+.game{
+  opacity:0;
+  transition:.8s;
+}
+
+.game.show{
+  opacity:1;
+}
+
+.slot-box{
+  background:#1c1c1c;
+  padding:36px;
+  border-radius:22px;
+  text-align:center;
+}
+
+.slot-box.win{
+  animation: winGlow 1.2s infinite alternate;
+}
+
+@keyframes winGlow{
+  from{ box-shadow:0 0 20px gold,0 0 40px orange; }
+  to{ box-shadow:0 0 40px gold,0 0 80px orange; }
+}
+
+.screen{
+  display:grid;
+  grid-template-columns:repeat(3,110px);
+  gap:16px;
+  margin-bottom:20px;
+}
+
+.cell{
+  height:140px;
+  border-radius:16px;
+  overflow:hidden;
+  background:#333;
+  position:relative;
+}
+
+.reel{
+  position:absolute;
+  width:100%;
+  top:0;
+}
+
+.symbol{
+  height:140px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:40px;
+  font-weight:bold;
+  color:#000;
+}
+
+.J{ background:#1976d2; }
+.Q{ background:#388e3c; }
+.K{ background:#fbc02d; }
+
+.joker{
+  background:linear-gradient(135deg,#6a1b9a,#ce93d8);
+  animation:jokerGlow 1s infinite alternate;
+}
+
+.blank{ background:#222; }
+
+@keyframes jokerGlow{
+  from{ box-shadow:0 0 10px purple; }
+  to{ box-shadow:0 0 25px violet; }
+}
+
+button{
+  padding:12px 28px;
+  font-size:16px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+#result{
+  margin-top:12px;
+  color:white;
+  min-height:22px;
+}
+
+/* EXIT */
+.exit-btn{
+  position:fixed;
+  top:20px;
+  right:20px;
+  padding:10px 22px;
+  border:none;
+  border-radius:20px;
+  background:#b71c1c;
+  color:white;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- START -->
+<div class="start-screen" id="startScreen">
+  <div class="logo">🎰 MINI SLOT 🎰</div>
+  <div class="sub-title">LUCK • FUN • SPIN</div>
+  <button class="start-btn" id="startBtn">START GAME</button>
+</div>
+
+<!-- LOADING -->
+<div class="loading-screen hidden" id="loadingScreen">
+  <div class="loading-bar">
+    <div class="loading-fill"></div>
+  </div>
+  <div class="loading-text">Loading Game...</div>
+</div>
+
+<!-- GAME -->
+<div class="game" id="game">
+  <div class="slot-box" id="slotBox">
+    <div class="screen" id="screen"></div>
+    <button id="spinBtn">SPIN</button>
+    <div id="result"></div>
+  </div>
+</div>
+
+<button class="exit-btn" onclick="location.reload()">EXIT</button>
+
+<script>
+const startBtn=document.getElementById("startBtn");
+const startScreen=document.getElementById("startScreen");
+const loading=document.getElementById("loadingScreen");
+const game=document.getElementById("game");
+
+startBtn.onclick=()=>{
+  startScreen.classList.add("hidden");
+  loading.classList.remove("hidden");
+  setTimeout(()=>{
+    loading.classList.add("hidden");
+    game.classList.add("show");
+  },2600);
+};
+
+/* SLOT GAME */
+const symbols=["J","Q","K"];
+const screen=document.getElementById("screen");
+const spinBtn=document.getElementById("spinBtn");
+const result=document.getElementById("result");
+const slotBox=document.getElementById("slotBox");
+
+const reels=[];
+let stopped=0;
+
+for(let i=0;i<3;i++){
+  const cell=document.createElement("div");
+  cell.className="cell";
+  const reel=document.createElement("div");
+  reel.className="reel";
+  cell.appendChild(reel);
+  screen.appendChild(cell);
+  reels.push(reel);
+}
+
+function randomSymbol(){
+  const r=Math.random();
+  if(r<0.08) return "BLANK";
+  if(r<0.13) return "JOKER";
+  return symbols[Math.floor(Math.random()*symbols.length)];
+}
+
+function createSymbol(sym){
+  const div=document.createElement("div");
+  div.className="symbol";
+  if(sym==="JOKER"){
+    div.textContent="🤡";
+    div.classList.add("joker");
+    div.dataset.value="JOKER";
+  }else if(sym==="BLANK"){
+    div.classList.add("blank");
+    div.dataset.value="BLANK";
+  }else{
+    div.textContent=sym;
+    div.classList.add(sym);
+    div.dataset.value=sym;
+  }
+  return div;
+}
+
+function spin(){
+  spinBtn.disabled=true;
+  result.textContent="";
+  slotBox.classList.remove("win");
+  stopped=0;
+
+  const forceWin=Math.random()<0.10;
+  const winSym=symbols[Math.floor(Math.random()*symbols.length)];
+
+  reels.forEach((reel,i)=>{
+    reel.innerHTML="";
+    const seq=[];
+    for(let j=0;j<12;j++) seq.push(randomSymbol());
+    if(forceWin) seq[seq.length-1]=winSym;
+    seq.forEach(s=>reel.appendChild(createSymbol(s)));
+
+    reel.style.transition="none";
+    reel.style.transform="translateY(0)";
+    requestAnimationFrame(()=>{
+      reel.style.transition=`transform ${1+i*0.6}s cubic-bezier(.15,.9,.2,1)`;
+      reel.style.transform=`translateY(-${(seq.length-1)*140}px)`;
+    });
+
+    setTimeout(()=>{
+      stopped++;
+      if(stopped===3) checkWin();
+    },1000+i*600);
+  });
+}
+
+function checkWin(){
+  const vals=reels.map(r=>r.lastElementChild.dataset.value);
+  const base=vals.find(v=>v!=="JOKER"&&v!=="BLANK");
+  const win=base&&vals.every(v=>v===base||v==="JOKER");
+  if(win){
+    result.textContent="🎉 YOU WIN!";
+    result.style.color="gold";
+    slotBox.classList.add("win");
+  }else{
+    result.textContent="ลองใหม่";
+  }
+  spinBtn.disabled=false;
+}
+
+spinBtn.onclick=spin;
+</script>
+
+</body>
+</html>
